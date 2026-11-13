@@ -1,0 +1,28 @@
+<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><title>サイト・チャンネル売却シミュレータ（売れた実績ベース）</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><style>body{font-family:sans-serif;max-width:640px;margin:2em auto;padding:0 1em;line-height:1.7}select,input,button{font-size:1em;padding:.4em;margin:.2em 0;width:100%}#out{background:#f6f6f6;padding:1em;margin-top:1em;display:none}</style></head>
+<body><h1>売れた実績で見る、売却価格シミュレータ</h1>
+<p>ジャンルと月利益を選ぶと、実際に成約した案件の倍率（中央値）から範囲を出します。希望価格の相場ではなく、売れた側の数字です。</p>
+<label>ジャンル<select id="g"></select></label>
+<label>月の利益（平均・円）<input id="p" type="number" value="50000" min="0"></label>
+<button onclick="run()">計算する</button>
+<div id="out"></div>
+<p style="font-size:.9em">もっと細かく（同型の分布・成約日数・値下げ局面まで）見たい場合の1件ずつの読み解きは、RegBase の店で扱う自動診断レポート（¥980）の範囲です。</p>
+<script>
+const DATA = {"EC・物販": {"all": 15, "days": 19, "bands": {"〜1万": 50, "1–5万": 21, "5–10万": 10, "10–30万": 10, "30万+": 5}}, "SNSアカウント": {"all": 12, "days": 20, "bands": {"〜1万": 38, "1–5万": 14, "5–10万": 8, "10–30万": 8, "30万+": 6}}, "Webメディア": {"all": 21, "days": 16, "bands": {"〜1万": 41, "1–5万": 18, "5–10万": 13, "10–30万": 12, "30万+": 7}}, "YouTube": {"all": 11, "days": 14, "bands": {"〜1万": 37, "1–5万": 12, "5–10万": 8, "10–30万": 7, "30万+": 7}}, "その他": {"all": 11, "days": 19, "bands": {"〜1万": 30, "1–5万": 11, "5–10万": 5, "10–30万": 6, "30万+": 5}}, "アプリ・Webサービス": {"all": 13, "days": 14, "bands": {"〜1万": 29, "1–5万": 18, "5–10万": 6, "10–30万": 12, "30万+": 2}}, "占い・相談": {"all": 10, "days": 17, "bands": {"〜1万": 52, "1–5万": 21, "5–10万": 8, "10–30万": 10, "30万+": 1}}, "__floor__": 120000};
+const BANDS=[[0,10000,"〜1万"],[10000,50000,"1–5万"],[50000,100000,"5–10万"],[100000,300000,"10–30万"],[300000,1e12,"30万+"]];
+const FUNNEL_STORE='ma_s1_funnel_v1';const SURFACE='jp';
+function funnelRead(){try{return JSON.parse(localStorage.getItem(FUNNEL_STORE)||'{}')}catch(e){return {}}}
+function funnelWrite(s){try{localStorage.setItem(FUNNEL_STORE,JSON.stringify(s))}catch(e){}}
+function funnelEvt(name){const s=funnelRead();s.totals=s.totals||{};s.bySurface=s.bySurface||{};s.bySurface[SURFACE]=s.bySurface[SURFACE]||{};s.events=s.events||[];s.totals[name]=(s.totals[name]||0)+1;s.bySurface[SURFACE][name]=(s.bySurface[SURFACE][name]||0)+1;s.lastEventAt=(new Date()).toISOString();s.events.push({t:s.lastEventAt,surface:SURFACE,event:name});if(s.events.length>500)s.events=s.events.slice(-500);funnelWrite(s)}
+const sel=document.getElementById('g');
+Object.keys(DATA).forEach(k=>{const o=document.createElement('option');o.textContent=k;sel.appendChild(o);});
+funnelEvt('simulator_start');
+function band(p){for(const [lo,hi,n] of BANDS){if(p>=lo&&p<hi)return n;}return "30万+";}
+function run(){const g=sel.value,p=+document.getElementById('p').value;const d=DATA[g];const b=band(p);
+ const m=(d.bands&&d.bands[b])||d.all;const out=document.getElementById('out');out.style.display='block';
+ funnelEvt('simulator_complete');
+ const cta='<p style="margin-top:.8em"><a id="report-cta" href="https://regbase.booth.pm/" target="_blank" rel="noopener">RegBase の店でデータ商品を見る</a></p>';
+ if(p<1000&&DATA['__floor__']){out.innerHTML='利益がほぼなくても、移転できる形の資産には床があります。成約した微益・無益案件の価格中央値は <b>'+DATA['__floor__'].toLocaleString()+'円</b> でした。'+cta;document.getElementById('report-cta').addEventListener('click',()=>funnelEvt('result_report_click'));return;}
+ if(!m){out.textContent='この帯の成約データがまだ薄いです。';return;}
+ out.innerHTML='売れた倍率の中央値: <b>'+m+'ヶ月分</b><br>あなたの月利益 '+p.toLocaleString()+'円 なら、成約価格の中央値は約 <b>'+Math.round(p*m).toLocaleString()+'円</b>'+(d.days?'<br>成約までの日数の中央値: '+d.days+'日':'')+cta;document.getElementById('report-cta').addEventListener('click',()=>funnelEvt('result_report_click'));}
+</script></body></html>
