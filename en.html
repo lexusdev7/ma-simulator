@@ -6,7 +6,7 @@
 <label>Monthly profit (average, JPY)<input id="p" type="number" value="50000" min="0"></label>
 <button onclick="run()">Estimate</button>
 <div id="out"></div>
-<p style="font-size:.9em">The full distribution, days-to-sell and price-cut patterns for one specific listing are covered by the automated diagnosis report ($9), sold through the RegBase store.</p>
+<p style="font-size:.9em">The full distribution, days-to-sell and price-cut patterns for one specific listing are covered by the automated diagnosis report ($9). The report will be sold through the RegBase store.</p>
 <script>
 const DATA = {"EC・物販": {"all": 15, "days": 19, "bands": {"〜1万": 50, "1–5万": 21, "5–10万": 10, "10–30万": 10, "30万+": 5}}, "SNSアカウント": {"all": 12, "days": 20, "bands": {"〜1万": 38, "1–5万": 14, "5–10万": 8, "10–30万": 8, "30万+": 6}}, "Webメディア": {"all": 21, "days": 16, "bands": {"〜1万": 41, "1–5万": 18, "5–10万": 13, "10–30万": 12, "30万+": 7}}, "YouTube": {"all": 11, "days": 14, "bands": {"〜1万": 37, "1–5万": 12, "5–10万": 8, "10–30万": 7, "30万+": 7}}, "その他": {"all": 11, "days": 19, "bands": {"〜1万": 30, "1–5万": 11, "5–10万": 5, "10–30万": 6, "30万+": 5}}, "アプリ・Webサービス": {"all": 13, "days": 14, "bands": {"〜1万": 29, "1–5万": 18, "5–10万": 6, "10–30万": 12, "30万+": 2}}, "占い・相談": {"all": 10, "days": 17, "bands": {"〜1万": 52, "1–5万": 21, "5–10万": 8, "10–30万": 10, "30万+": 1}}, "__floor__": 120000};
 const FUNNEL_STORE='ma_s1_funnel_v1';const SURFACE='en';
