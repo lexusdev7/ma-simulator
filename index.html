@@ -55,7 +55,7 @@ a{color:var(--accent-deep)}
   margin-top:26px;max-width:34em;color:var(--ink2);font-size:clamp(1rem,1.6vw,1.075rem);line-height:1.9;
 }
 .evidence{
-  margin-top:44px;display:grid;grid-template-columns:repeat(3,1fr);gap:24px;
+  margin-top:44px;display:grid;grid-template-columns:repeat(2,1fr);gap:24px;
 }
 .evidence .stat{border-top:2px solid var(--ink);padding-top:12px}
 .evidence .num{font-size:clamp(1.5rem,3vw,2rem);font-weight:800;letter-spacing:-0.02em;line-height:1.2}
@@ -163,7 +163,6 @@ footer .wordmark{font-size:12px}
 @media (max-width:640px){
   .hero{padding:48px 0 32px}
   .evidence{grid-template-columns:1fr 1fr;gap:18px}
-  .evidence .stat:last-child{grid-column:1/-1}
   .r-stats{grid-template-columns:1fr 1fr;gap:16px}
   .bar-row{grid-template-columns:52px 1fr 62px;gap:10px}
   th,td{padding:12px 13px;font-size:13.5px}
@@ -193,7 +192,6 @@ footer .wordmark{font-size:12px}
     <p class="sub">ジャンルと月利益を選ぶと、実際に成約した案件の倍率（中央値）から、成約価格の目安を出します。表に出ている希望価格の相場ではなく、売れた側の数字です。</p>
     <div class="evidence">
       <div class="stat"><p class="num">6,789<small>件</small></p><p class="lbl">成約した案件の収集データ</p></div>
-      <div class="stat"><p class="num">431<small>件</small></p><p class="lbl">稼働中の案件も継続して収集</p></div>
       <div class="stat"><p class="num">¥120,000</p><p class="lbl">微益・無益でも売れた価格の中央値</p></div>
     </div>
   </section>

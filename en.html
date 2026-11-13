@@ -38,7 +38,7 @@ a{color:var(--accent-deep)}
 .hero h1{margin-top:22px;font-size:clamp(2.35rem,6.2vw,4.1rem);font-weight:800;line-height:1.08;letter-spacing:-0.03em;font-optical-sizing:auto}
 .hero h1 em{font-style:normal;color:var(--accent)}
 .hero .sub{margin-top:26px;max-width:36em;color:var(--ink2);font-size:clamp(1rem,1.6vw,1.075rem);line-height:1.85}
-.evidence{margin-top:44px;display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.evidence{margin-top:44px;display:grid;grid-template-columns:repeat(2,1fr);gap:24px}
 .evidence .stat{border-top:2px solid var(--ink);padding-top:12px}
 .evidence .num{font-size:clamp(1.5rem,3vw,2rem);font-weight:800;letter-spacing:-0.02em;line-height:1.2}
 .evidence .num small{font-size:.55em;font-weight:700;color:var(--ink2);margin-left:2px}
@@ -108,7 +108,6 @@ footer .wordmark{font-size:12px}
 @media (max-width:640px){
   .hero{padding:48px 0 32px}
   .evidence{grid-template-columns:1fr 1fr;gap:18px}
-  .evidence .stat:last-child{grid-column:1/-1}
   .r-stats{grid-template-columns:1fr 1fr;gap:16px}
   .bar-row{grid-template-columns:60px 1fr 72px;gap:10px}
   th,td{padding:12px 13px;font-size:13.5px}
@@ -138,7 +137,6 @@ footer .wordmark{font-size:12px}
     <p class="sub">Pick a genre and a monthly profit. The range comes from the median multiple of listings that actually sold, not from asking prices that never moved.</p>
     <div class="evidence">
       <div class="stat"><p class="num">6,789</p><p class="lbl">Sold listings in the dataset</p></div>
-      <div class="stat"><p class="num">431</p><p class="lbl">Live listings tracked on top</p></div>
       <div class="stat"><p class="num">¥120,000</p><p class="lbl">Median price even at near-zero profit</p></div>
     </div>
   </section>
