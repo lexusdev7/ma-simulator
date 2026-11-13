@@ -1,12 +1,245 @@
-<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><title>サイト・チャンネル売却シミュレータ（売れた実績ベース）</title>
-<meta name="viewport" content="width=device-width,initial-scale=1"><style>body{font-family:sans-serif;max-width:640px;margin:2em auto;padding:0 1em;line-height:1.7}select,input,button{font-size:1em;padding:.4em;margin:.2em 0;width:100%}#out{background:#f6f6f6;padding:1em;margin-top:1em;display:none}</style></head>
-<body><h1>売れた実績で見る、売却価格シミュレータ</h1>
-<p>ジャンルと月利益を選ぶと、実際に成約した案件の倍率（中央値）から範囲を出します。希望価格の相場ではなく、売れた側の数字です。</p>
-<label>ジャンル<select id="g"></select></label>
-<label>月の利益（平均・円）<input id="p" type="number" value="50000" min="0"></label>
-<button onclick="run()">計算する</button>
-<div id="out"></div>
-<p style="font-size:.9em">もっと細かく（同型の分布・成約日数・値下げ局面まで）見たい場合は、自動診断レポート（¥980）で1件ずつ読み解きます。このレポートは RegBase の店で販売予定です。</p>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>売却価格シミュレータ｜売れた実績ベース — RegBase</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="ジャンルと月利益を選ぶと、実際に成約した6,789件の倍率の中央値から成約価格の目安を出します。希望価格の相場ではなく、売れた側の数字です。">
+<style>
+:root{
+  --paper:#FAF9F6; --paper2:#F1EEE7; --ink:#171512; --ink2:#5A554D; --ink3:#8A8478;
+  --line:#E4E0D4; --accent:#B3402A; --accent-deep:#93331F; --accent-bright:#E0684B;
+  --dark:#171512; --dark-text:#F5F2EC; --dark-sub:#B9B2A4;
+  --ease-out:cubic-bezier(0.23,1,0.32,1);
+  --shadow-card:0 1px 2px rgba(23,21,18,.05),0 16px 40px -16px rgba(23,21,18,.22);
+  --radius:18px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+  background:var(--paper); color:var(--ink);
+  font-size:16px; line-height:1.75; -webkit-font-smoothing:antialiased;
+  font-variant-numeric:tabular-nums;
+}
+::selection{background:var(--accent);color:#fff}
+a{color:var(--accent-deep)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+
+.wrap{max-width:920px;margin:0 auto;padding:0 24px}
+
+/* ---------- top bar ---------- */
+.topbar{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:22px 0 0;
+}
+.wordmark{font-weight:700;letter-spacing:.22em;font-size:13px;color:var(--ink);text-decoration:none}
+.wordmark span{color:var(--accent)}
+.topbar nav{display:flex;gap:20px;font-size:13px}
+.topbar nav a{color:var(--ink2);text-decoration:none;transition:color 160ms var(--ease-out)}
+@media (hover:hover) and (pointer:fine){.topbar nav a:hover{color:var(--accent-deep)}}
+
+/* ---------- hero ---------- */
+.hero{padding:72px 0 40px;border-bottom:1px solid var(--line)}
+.kicker{
+  display:inline-flex;align-items:center;gap:10px;
+  font-size:12.5px;letter-spacing:.14em;color:var(--accent-deep);font-weight:600;
+}
+.kicker::before{content:"";width:26px;height:1px;background:var(--accent)}
+.hero h1{
+  margin-top:22px;font-size:clamp(2.35rem,6.2vw,4.1rem);font-weight:800;
+  line-height:1.14;letter-spacing:-0.03em;font-optical-sizing:auto;
+}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.hero .sub{
+  margin-top:26px;max-width:34em;color:var(--ink2);font-size:clamp(1rem,1.6vw,1.075rem);line-height:1.9;
+}
+.evidence{
+  margin-top:44px;display:grid;grid-template-columns:repeat(3,1fr);gap:24px;
+}
+.evidence .stat{border-top:2px solid var(--ink);padding-top:12px}
+.evidence .num{font-size:clamp(1.5rem,3vw,2rem);font-weight:800;letter-spacing:-0.02em;line-height:1.2}
+.evidence .num small{font-size:.55em;font-weight:700;color:var(--ink2);margin-left:2px}
+.evidence .lbl{margin-top:4px;font-size:12.5px;color:var(--ink2);letter-spacing:.04em}
+
+/* ---------- tool card ---------- */
+.tool{padding:48px 0 8px}
+.card{
+  background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow-card);padding:clamp(24px,4.5vw,44px);
+}
+.card h2{font-size:15px;letter-spacing:.1em;font-weight:700}
+.card .hint{margin-top:6px;font-size:13.5px;color:var(--ink2)}
+.field{margin-top:28px}
+.field>span{display:block;font-size:12.5px;font-weight:700;letter-spacing:.1em;color:var(--ink2);margin-bottom:12px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{
+  appearance:none;border:1px solid var(--line);background:var(--paper);
+  padding:9px 16px;border-radius:999px;font:inherit;font-size:14.5px;color:var(--ink);
+  cursor:pointer;transition:transform 160ms var(--ease-out),background 160ms var(--ease-out),color 160ms var(--ease-out),border-color 160ms var(--ease-out);
+}
+.chip:active{transform:scale(0.97)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--dark-text);border-color:var(--ink)}
+@media (hover:hover) and (pointer:fine){.chip:hover{border-color:var(--ink3)}}
+.profit{display:flex;align-items:baseline;gap:6px;border-bottom:2px solid var(--ink);padding-bottom:6px;max-width:340px}
+.profit .yen{font-size:20px;font-weight:700}
+.profit input{
+  border:none;background:transparent;font:inherit;font-size:30px;font-weight:800;letter-spacing:-0.01em;
+  width:100%;color:var(--ink);padding:0;
+}
+.profit input:focus{outline:none}
+.profit-wrap:focus-within{border-color:var(--accent)}
+.run{
+  margin-top:34px;display:inline-flex;align-items:center;gap:10px;
+  background:var(--accent);color:#fff;border:none;cursor:pointer;
+  font:inherit;font-weight:700;font-size:16px;letter-spacing:.06em;
+  padding:15px 34px;border-radius:999px;
+  transition:transform 160ms var(--ease-out),background 160ms var(--ease-out);
+}
+.run:active{transform:scale(0.97)}
+@media (hover:hover) and (pointer:fine){.run:hover{background:var(--accent-deep)}}
+.run .arr{transition:transform 160ms var(--ease-out)}
+@media (hover:hover) and (pointer:fine){.run:hover .arr{transform:translateX(3px)}}
+
+/* ---------- result ---------- */
+.result{
+  margin-top:28px;background:var(--dark);color:var(--dark-text);
+  border-radius:var(--radius);padding:clamp(26px,4.5vw,44px);
+  display:none;
+}
+.result.show{display:block}
+.result .r-lbl{font-size:12.5px;letter-spacing:.14em;color:var(--dark-sub);font-weight:600}
+.result .r-price{
+  margin-top:10px;font-size:clamp(2.6rem,7vw,4.4rem);font-weight:800;line-height:1.05;letter-spacing:-0.03em;
+}
+.result .r-price small{font-size:.38em;font-weight:700;color:var(--dark-sub);letter-spacing:0;margin-right:.15em}
+.result .r-msg{margin-top:14px;font-size:16.5px;line-height:1.85;max-width:32em}
+.result .r-msg b{color:#fff}
+.r-stats{margin-top:30px;display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.r-stat{border-top:1px solid rgba(245,242,236,.22);padding-top:12px}
+.r-stat .n{font-size:26px;font-weight:800;letter-spacing:-0.01em}
+.r-stat .n small{font-size:.55em;color:var(--dark-sub);font-weight:700}
+.r-stat .t{font-size:12.5px;color:var(--dark-sub);margin-top:2px;letter-spacing:.05em}
+.bars{margin-top:34px}
+.bars .b-title{font-size:12.5px;letter-spacing:.12em;color:var(--dark-sub);font-weight:600;margin-bottom:14px}
+.bar-row{display:grid;grid-template-columns:64px 1fr 74px;align-items:center;gap:14px;margin-top:9px;font-size:13.5px}
+.bar-row .b-name{color:var(--dark-sub)}
+.bar-row .b-val{text-align:right;font-weight:700}
+.bar-track{height:8px;background:rgba(245,242,236,.14);border-radius:99px;overflow:hidden}
+.bar-fill{height:100%;width:0;background:var(--dark-sub);border-radius:99px;transition:width 700ms var(--ease-out)}
+.bar-row.active .b-name{color:#fff;font-weight:700}
+.bar-row.active .bar-fill{background:var(--accent-bright)}
+.bar-row.active .b-val{color:var(--accent-bright)}
+.result .cta{
+  margin-top:36px;display:inline-flex;align-items:center;gap:10px;
+  background:var(--dark-text);color:var(--ink);text-decoration:none;font-weight:700;font-size:15px;
+  padding:13px 26px;border-radius:999px;transition:transform 160ms var(--ease-out);
+}
+.result .cta:active{transform:scale(0.97)}
+.fade-item{opacity:0;transform:translateY(10px);transition:opacity 380ms var(--ease-out),transform 380ms var(--ease-out)}
+.result.show .fade-item{opacity:1;transform:translateY(0)}
+.result.show .fade-item:nth-child(2){transition-delay:60ms}
+.result.show .fade-item:nth-child(3){transition-delay:120ms}
+.result.show .fade-item:nth-child(4){transition-delay:180ms}
+.result.show .fade-item:nth-child(5){transition-delay:240ms}
+
+/* ---------- data table ---------- */
+.data{padding:56px 0 8px}
+.data h2{font-size:clamp(1.3rem,2.6vw,1.6rem);font-weight:800;letter-spacing:-0.02em;line-height:1.35}
+.data .d-sub{margin-top:10px;color:var(--ink2);font-size:14.5px;max-width:36em}
+table{width:100%;border-collapse:collapse;margin-top:26px;background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+th,td{padding:14px 18px;text-align:left;font-size:14.5px}
+th{background:var(--paper2);font-size:12.5px;letter-spacing:.1em;color:var(--ink2);font-weight:700}
+tr+tr td{border-top:1px solid var(--line)}
+td.n,th.n{text-align:right;font-weight:700}
+.note{margin-top:22px;font-size:13.5px;color:var(--ink2);line-height:1.9;max-width:38em}
+.note a{font-weight:600}
+
+/* ---------- footer ---------- */
+footer{margin-top:64px;border-top:1px solid var(--line);padding:28px 0 44px}
+footer .f-in{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--ink2)}
+footer .wordmark{font-size:12px}
+
+@media (max-width:640px){
+  .hero{padding:48px 0 32px}
+  .evidence{grid-template-columns:1fr 1fr;gap:18px}
+  .evidence .stat:last-child{grid-column:1/-1}
+  .r-stats{grid-template-columns:1fr 1fr;gap:16px}
+  .bar-row{grid-template-columns:52px 1fr 62px;gap:10px}
+  th,td{padding:12px 13px;font-size:13.5px}
+}
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto}
+  .fade-item{transition:opacity 160ms ease;transform:none}
+  .bar-fill{transition:none}
+  .chip,.run,.result .cta{transition:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <a class="wordmark" href="https://regbase.booth.pm/" target="_blank" rel="noopener">REG<span>BASE</span></a>
+    <nav>
+      <a href="https://regbase.booth.pm/" target="_blank" rel="noopener">店を見る</a>
+      <a href="./en.html">English</a>
+    </nav>
+  </div>
+
+  <section class="hero">
+    <p class="kicker">日本のM&A成約データ 6,789件から</p>
+    <h1>希望価格ではなく、<br><em>売れた価格</em>で見る。</h1>
+    <p class="sub">ジャンルと月利益を選ぶと、実際に成約した案件の倍率（中央値）から、成約価格の目安を出します。表に出ている希望価格の相場ではなく、売れた側の数字です。</p>
+    <div class="evidence">
+      <div class="stat"><p class="num">6,789<small>件</small></p><p class="lbl">成約した案件の収集データ</p></div>
+      <div class="stat"><p class="num">431<small>件</small></p><p class="lbl">稼働中の案件も継続して収集</p></div>
+      <div class="stat"><p class="num">¥120,000</p><p class="lbl">微益・無益でも売れた価格の中央値</p></div>
+    </div>
+  </section>
+
+  <section class="tool">
+    <div class="card">
+      <h2>売却価格シミュレータ</h2>
+      <p class="hint">あなたのサイト・チャンネルのジャンルと、月の利益の平均を入れてください。</p>
+
+      <div class="field">
+        <span id="genre-lbl">ジャンル</span>
+        <div class="chips" id="chips" role="group" aria-labelledby="genre-lbl"></div>
+      </div>
+
+      <div class="field">
+        <span id="profit-lbl">月の利益（平均）</span>
+        <div class="profit profit-wrap">
+          <span class="yen">¥</span>
+          <input id="p" type="number" value="50000" min="0" inputmode="numeric" aria-labelledby="profit-lbl">
+        </div>
+      </div>
+
+      <button class="run" id="run" type="button">計算する <span class="arr">→</span></button>
+
+      <div class="result" id="out" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section class="data">
+    <h2>ジャンル別の中央値</h2>
+    <p class="d-sub">成約した案件全体での、月利益に対する倍率と、成約までの日数です。シミュレータは利益の帯ごとに、この内訳を使って計算します。</p>
+    <table>
+      <thead><tr><th>ジャンル</th><th class="n">倍率の中央値</th><th class="n">成約までの日数（中央値）</th></tr></thead>
+      <tbody id="genre-rows"></tbody>
+    </table>
+    <p class="note">もっと細かく（同型の分布・成約日数・値下げ局面まで）見たい場合は、自動診断レポート（¥980）で1件ずつ読み解きます。このレポートは RegBase の店で販売予定です。<a href="https://regbase.booth.pm/" target="_blank" rel="noopener">RegBase の店を見る</a></p>
+  </section>
+
+  <footer>
+    <div class="f-in">
+      <a class="wordmark" href="https://regbase.booth.pm/" target="_blank" rel="noopener">REG<span>BASE</span></a>
+      <p>成約データの収集と集計： RegBase</p>
+    </div>
+  </footer>
+
+</div>
 <script>
 const DATA = {"EC・物販": {"all": 15, "days": 19, "bands": {"〜1万": 50, "1–5万": 21, "5–10万": 10, "10–30万": 10, "30万+": 5}}, "SNSアカウント": {"all": 12, "days": 20, "bands": {"〜1万": 38, "1–5万": 14, "5–10万": 8, "10–30万": 8, "30万+": 6}}, "Webメディア": {"all": 21, "days": 16, "bands": {"〜1万": 41, "1–5万": 18, "5–10万": 13, "10–30万": 12, "30万+": 7}}, "YouTube": {"all": 11, "days": 14, "bands": {"〜1万": 37, "1–5万": 12, "5–10万": 8, "10–30万": 7, "30万+": 7}}, "その他": {"all": 11, "days": 19, "bands": {"〜1万": 30, "1–5万": 11, "5–10万": 5, "10–30万": 6, "30万+": 5}}, "アプリ・Webサービス": {"all": 13, "days": 14, "bands": {"〜1万": 29, "1–5万": 18, "5–10万": 6, "10–30万": 12, "30万+": 2}}, "占い・相談": {"all": 10, "days": 17, "bands": {"〜1万": 52, "1–5万": 21, "5–10万": 8, "10–30万": 10, "30万+": 1}}, "__floor__": 120000};
 const BANDS=[[0,10000,"〜1万"],[10000,50000,"1–5万"],[50000,100000,"5–10万"],[100000,300000,"10–30万"],[300000,1e12,"30万+"]];
@@ -14,15 +247,59 @@ const FUNNEL_STORE='ma_s1_funnel_v1';const SURFACE='jp';
 function funnelRead(){try{return JSON.parse(localStorage.getItem(FUNNEL_STORE)||'{}')}catch(e){return {}}}
 function funnelWrite(s){try{localStorage.setItem(FUNNEL_STORE,JSON.stringify(s))}catch(e){}}
 function funnelEvt(name){const s=funnelRead();s.totals=s.totals||{};s.bySurface=s.bySurface||{};s.bySurface[SURFACE]=s.bySurface[SURFACE]||{};s.events=s.events||[];s.totals[name]=(s.totals[name]||0)+1;s.bySurface[SURFACE][name]=(s.bySurface[SURFACE][name]||0)+1;s.lastEventAt=(new Date()).toISOString();s.events.push({t:s.lastEventAt,surface:SURFACE,event:name});if(s.events.length>500)s.events=s.events.slice(-500);funnelWrite(s)}
-const sel=document.getElementById('g');
-Object.keys(DATA).forEach(k=>{const o=document.createElement('option');o.textContent=k;sel.appendChild(o);});
+const reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const chipsEl=document.getElementById('chips');
+let genre=Object.keys(DATA).filter(k=>k!=='__floor__')[0];
+Object.keys(DATA).forEach(k=>{if(k==='__floor__')return;
+  const b=document.createElement('button');b.type='button';b.className='chip';b.textContent=k;
+  b.setAttribute('aria-pressed',k===genre?'true':'false');
+  b.addEventListener('click',()=>{genre=k;chipsEl.querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed',c===b?'true':'false'));});
+  chipsEl.appendChild(b);});
+const rowsEl=document.getElementById('genre-rows');
+Object.keys(DATA).forEach(k=>{if(k==='__floor__')return;const d=DATA[k];
+  const tr=document.createElement('tr');
+  tr.innerHTML='<td>'+k+'</td><td class="n">'+d.all+'ヶ月分</td><td class="n">'+d.days+'日</td>';
+  rowsEl.appendChild(tr);});
 funnelEvt('simulator_start');
 function band(p){for(const [lo,hi,n] of BANDS){if(p>=lo&&p<hi)return n;}return "30万+";}
-function run(){const g=sel.value,p=+document.getElementById('p').value;const d=DATA[g];const b=band(p);
- const m=(d.bands&&d.bands[b])||d.all;const out=document.getElementById('out');out.style.display='block';
- funnelEvt('simulator_complete');
- const cta='<p style="margin-top:.8em"><a id="report-cta" href="https://regbase.booth.pm/" target="_blank" rel="noopener">RegBase の店でデータ商品を見る</a></p>';
- if(p<1000&&DATA['__floor__']){out.innerHTML='利益がほぼなくても、移転できる形の資産には床があります。成約した微益・無益案件の価格中央値は <b>'+DATA['__floor__'].toLocaleString()+'円</b> でした。'+cta;document.getElementById('report-cta').addEventListener('click',()=>funnelEvt('result_report_click'));return;}
- if(!m){out.textContent='この帯の成約データがまだ薄いです。';return;}
- out.innerHTML='売れた倍率の中央値: <b>'+m+'ヶ月分</b><br>あなたの月利益 '+p.toLocaleString()+'円 なら、成約価格の中央値は約 <b>'+Math.round(p*m).toLocaleString()+'円</b>'+(d.days?'<br>成約までの日数の中央値: '+d.days+'日':'')+cta;document.getElementById('report-cta').addEventListener('click',()=>funnelEvt('result_report_click'));}
-</script></body></html>
+function countUp(el,target){
+  if(reduceMotion){el.textContent=target.toLocaleString();return;}
+  const dur=650,t0=performance.now();
+  function tick(t){const k=Math.min(1,(t-t0)/dur);const e=1-Math.pow(1-k,4);
+    el.textContent=Math.round(target*e).toLocaleString();
+    if(k<1)requestAnimationFrame(tick);}
+  requestAnimationFrame(tick);}
+document.getElementById('run').addEventListener('click',()=>{
+  const p=+document.getElementById('p').value||0;const d=DATA[genre];const b=band(p);
+  const m=(d.bands&&d.bands[b])||d.all;const out=document.getElementById('out');
+  funnelEvt('simulator_complete');
+  const cta='<a class="cta" id="report-cta" href="https://regbase.booth.pm/" target="_blank" rel="noopener">RegBase の店でデータ商品を見る</a>';
+  let msg,price;
+  if(p<1000&&DATA['__floor__']){price=DATA['__floor__'];
+    msg='利益がほぼなくても、移転できる形の資産には床があります。成約した微益・無益案件の価格の中央値は、この金額でした。';}
+  else if(!m){out.classList.remove('show');out.style.display='block';out.innerHTML='<p class="r-msg">この帯の成約データがまだ薄いです。</p>';return;}
+  else{price=Math.round(p*m);
+    msg='あなたの月利益 '+p.toLocaleString()+'円 なら、売れた価格の中央値はこの金額です。';}
+  const maxBand=Math.max.apply(null,BANDS.map(function(x){return d.bands[x[2]]||0;}));
+  let bars='<div class="bars fade-item"><p class="b-title">利益の帯ごとの倍率（'+genre+'）</p>';
+  BANDS.forEach(function(x){const v=d.bands[x[2]]||0;const w=maxBand?Math.round(v/maxBand*100):0;
+    bars+='<div class="bar-row'+(x[2]===b?' active':'')+'"><span class="b-name">'+x[2]+'円</span><div class="bar-track"><div class="bar-fill" data-w="'+w+'"></div></div><span class="b-val">'+v+'ヶ月分</span></div>';});
+  bars+='</div>';
+  out.style.display='block';
+  out.innerHTML='<p class="r-lbl fade-item">成約価格の中央値（目安）</p>'
+    +'<p class="r-price fade-item"><small>¥</small><span id="r-num">0</span></p>'
+    +'<p class="r-msg fade-item">'+msg+'</p>'
+    +'<div class="r-stats fade-item"><div class="r-stat"><p class="n">'+m+'<small> ヶ月分</small></p><p class="t">売れた倍率の中央値（この帯）</p></div>'
+    +'<div class="r-stat"><p class="n">'+(d.days||'—')+'<small> 日</small></p><p class="t">成約までの日数の中央値</p></div></div>'
+    +bars+'<div class="fade-item">'+cta+'</div>';
+  out.classList.remove('show');void out.offsetWidth;out.classList.add('show');
+  countUp(document.getElementById('r-num'),price);
+  requestAnimationFrame(()=>{requestAnimationFrame(()=>{
+    out.querySelectorAll('.bar-fill').forEach(f=>{f.style.width=f.getAttribute('data-w')+'%';});});});
+  const c=document.getElementById('report-cta');
+  if(c)c.addEventListener('click',()=>funnelEvt('result_report_click'));
+  out.scrollIntoView({behavior:reduceMotion?'auto':'smooth',block:'nearest'});
+});
+</script>
+</body>
+</html>
